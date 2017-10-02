@@ -23,13 +23,13 @@ def reference(stack, queue, graph):
         # print('ra', queue[0]['deprel'], stack[0]['cpostag'], queue[0]['cpostag'])
         deprel = '.' + queue[0]['deprel']
         stack, queue, graph = transition.right_arc(stack, queue, graph)
-        return stack, queue, graph, 'ra' + deprel
+        return stack, queue, graph, 'ra'# + deprel
     # Left arc
     if stack and queue[0]['id'] == stack[0]['head']:
         # print('la', stack[0]['deprel'], stack[0]['cpostag'], queue[0]['cpostag'])
         deprel = '.' + stack[0]['deprel']
         stack, queue, graph = transition.left_arc(stack, queue, graph)
-        return stack, queue, graph, 'la' + deprel
+        return stack, queue, graph, 'la'# + deprel
     # Reduce
     if stack and transition.can_reduce(stack, graph):
         for word in stack:
