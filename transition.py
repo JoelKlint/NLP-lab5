@@ -148,7 +148,7 @@ def equal_graphs(sentence, graph):
         if word['id'] in graph['heads'] and word['head'] == graph['heads'][word['id']]:
             pass
         else:
-            print(word, flush=True)
+            # print(word, flush=True)
             equal = False
     return equal
 

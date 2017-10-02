@@ -57,7 +57,8 @@ if __name__ == '__main__':
     for sentence in formatted_corpus:
         sent_cnt += 1
         if sent_cnt % 1000 == 0:
-            print(sent_cnt, 'sentences on', len(formatted_corpus), flush=True)
+            a = 1
+            # print(sent_cnt, 'sentences on', len(formatted_corpus), flush=True)
         stack = []
         queue = list(sentence)
         graph = {}
@@ -70,10 +71,21 @@ if __name__ == '__main__':
             stack, queue, graph, trans = reference(stack, queue, graph)
             transitions.append(trans)
         stack, graph = transition.empty_stack(stack, graph)
-        print('Equal graphs:', transition.equal_graphs(sentence, graph))
+        # print('Equal graphs:', transition.equal_graphs(sentence, graph))
+        if transition.equal_graphs(sentence, graph) == False:
+            if(len(transitions) < 15):
+                print("")
+                print("")
+                print(transition.equal_graphs(sentence, graph))
+                print(len(transitions))
+                for word in sentence:
+                    print(word['form'])
+                print(transitions)
+                print(graph)
+
 
         # Poorman's projectivization to have well-formed graphs.
         for word in sentence:
             word['head'] = graph['heads'][word['id']]
-        print(transitions)
-        print(graph)
+        # print(transitions)
+        # print(graph)
