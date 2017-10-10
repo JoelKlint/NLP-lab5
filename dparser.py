@@ -133,7 +133,7 @@ if __name__ == '__main__':
         'can-re',
         'can-la'
         'can-ra',
-        'root_of_sentence'
+        'head_of_stack_0_POS'
     ]
 
     sent_cnt = 0

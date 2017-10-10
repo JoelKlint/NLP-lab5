@@ -14,6 +14,7 @@ def extract(stack, queue, graph, feature_names, sentence):
     ID_TAG = 'id'
     DEPREL_TAG = 'deprel'
     NULL_VALUE = 'nil'
+    HEAD_TAG = 'head'
 
     # stack_0
     if stack:
@@ -62,10 +63,12 @@ def extract(stack, queue, graph, feature_names, sentence):
             after_stack_0_POS = next_word[POS_TAG]
     
     # The root word of the sentence
-    for word in sentence:
-        if word[DEPREL_TAG] == 'ROOT' and word[POS_TAG] != 'ROOT':
-            root_word_of_sentence = word[WORD_TAG]
-            break
+    if stack:
+        head_index_of_stack_0 = stack[0][HEAD_TAG]
+        head_of_stack_0 = sentence[int(head_index_of_stack_0)]
+        head_of_stack_0_POS = head_of_stack_0[POS_TAG]
+    else:
+        head_of_stack_0_POS = NULL_VALUE
 
     if len(feature_names) == 6:
         features.append(stack_0_word)
@@ -114,7 +117,7 @@ def extract(stack, queue, graph, feature_names, sentence):
 
         # Our own features
         features.append(transition.can_rightarc(stack, graph))
-        features.append(root_word_of_sentence)
+        features.append(head_of_stack_0_POS)
 
 
     # Convert features object
