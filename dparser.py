@@ -50,11 +50,10 @@ feature_names_long = [
     'after_stack_0_POS',
     'can-re',
     'can-la',
-    'can-ra',
-    'head_of_stack_0_POS'
+    'can-ra'
 ]
 
-FEATURE_NAMES = feature_names_middle
+FEATURE_NAMES = feature_names_long
 
 def reference(stack, queue, graph):
     """
@@ -234,12 +233,13 @@ if __name__ == '__main__':
 
         vec = DictVectorizer(sparse=True)
         X = vec.fit_transform(X_dict)
-        y, dict_classes, inv_dict_classes = encode_classes(y_symbols)
+        y, dict_classes, inv_dict_classes = encode_classes(y_train_symbols)
 
         model = classifier.fit(X, y)
         print(model)
 
         # Save the model
+
         pickle.dump(model, open(MODEL_FILE_NAME, 'wb')) 
         pickle.dump(vec, open(DICT_VECTORIZER_FILE_NAME, 'wb'))
         pickle.dump(dict_classes, open(DICT_CLASSES_FILE_NAME, 'wb'))
@@ -302,5 +302,5 @@ if __name__ == '__main__':
     conll.save('results.txt', formatted_corpus, column_names_2006)
 
     # print("Classification report for classifier %s:\n%s\n" 
-        # % (classifier, metrics.classification_report(y_symbols, list(map(lambda y_pred: dict_classes[y_pred], y_predicted_symbols)) )))
+        # % (classifier, metrics.classification_report(y_train_symbols, list(map(lambda y_pred: dict_classes[y_pred], y_predicted_symbols)) )))
 

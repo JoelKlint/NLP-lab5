@@ -74,7 +74,7 @@ def extract(stack, queue, graph, feature_names, sentence):
         features.append(transition.can_reduce(stack, graph))
         features.append(transition.can_leftarc(stack, graph))
 
-    elif len(feature_names) == 14:
+    elif len(feature_names) == 13:
         # word after top of stack in sentence
         if stack_0_word == NULL_VALUE:
             after_stack_0_word = NULL_VALUE
@@ -89,13 +89,13 @@ def extract(stack, queue, graph, feature_names, sentence):
                 after_stack_0_word = next_word[WORD_TAG]
                 after_stack_0_POS = next_word[POS_TAG]
         
-        # Head of stack 0 POS
-        if stack:
-            head_index_of_stack_0 = stack[0][HEAD_TAG]
-            head_of_stack_0 = sentence[int(head_index_of_stack_0)]
-            head_of_stack_0_POS = head_of_stack_0[POS_TAG]
-        else:
-            head_of_stack_0_POS = NULL_VALUE
+        # # Head of stack 0 POS
+        # if stack:
+        #     head_index_of_stack_0 = stack[0][HEAD_TAG]
+        #     head_of_stack_0 = sentence[int(head_index_of_stack_0)]
+        #     head_of_stack_0_POS = head_of_stack_0[POS_TAG]
+        # else:
+        #     head_of_stack_0_POS = NULL_VALUE
 
         features.append(stack_0_word)
         features.append(stack_0_POS)
@@ -117,7 +117,7 @@ def extract(stack, queue, graph, feature_names, sentence):
 
         # Our own features
         features.append(transition.can_rightarc(stack))
-        features.append(head_of_stack_0_POS)
+        # features.append(head_of_stack_0_POS)
 
 
     # Convert features object
