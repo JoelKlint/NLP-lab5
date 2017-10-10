@@ -3,3 +3,4 @@ env/
 __pycache__/
 *.pyc
 *.trained_model
+results.txt

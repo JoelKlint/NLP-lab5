@@ -14,6 +14,48 @@ from sklearn import metrics
 from sklearn.feature_extraction import DictVectorizer
 import pickle
 
+feature_names_short = [
+    'stack_0_word',
+    'stack_0_POS',
+    'queue_0_word',
+    'queue_0_POS',
+    'can-re',
+    'can-la'
+]
+
+feature_names_middle = [
+    'stack_0_word',
+    'stack_0_POS',
+    'stack_1_word',
+    'stack_1_POS',
+    'queue_0_word',
+    'queue_0_POS',
+    'queue_1_word',
+    'queue_1_POS',
+    'can-re',
+    'can-la'
+]
+
+# TODO: Fix last feature 
+feature_names_long = [
+    'stack_0_POS',
+    'stack_0_word',
+    'stack_1_word',
+    'stack_1_POS',
+    'queue_0_word',
+    'queue_0_POS',
+    'queue_1_word',
+    'queue_1_POS',
+    'after_stack_0_word',
+    'after_stack_0_POS',
+    'can-re',
+    'can-la',
+    'can-ra',
+    'head_of_stack_0_POS'
+]
+
+FEATURE_NAMES = feature_names_middle
+
 def reference(stack, queue, graph):
     """
     Gold standard parsing
@@ -30,13 +72,13 @@ def reference(stack, queue, graph):
         # print('ra', queue[0]['deprel'], stack[0]['cpostag'], queue[0]['cpostag'])
         deprel = '.' + queue[0]['deprel']
         stack, queue, graph = transition.right_arc(stack, queue, graph)
-        return stack, queue, graph, 'ra'# + deprel
+        return stack, queue, graph, 'ra' + deprel
     # Left arc
     if stack and queue[0]['id'] == stack[0]['head']:
         # print('la', stack[0]['deprel'], stack[0]['cpostag'], queue[0]['cpostag'])
         deprel = '.' + stack[0]['deprel']
         stack, queue, graph = transition.left_arc(stack, queue, graph)
-        return stack, queue, graph, 'la'# + deprel
+        return stack, queue, graph, 'la' + deprel
     # Reduce
     if stack and transition.can_reduce(stack, graph):
         for word in stack:
@@ -90,55 +132,7 @@ def encode_classes(y_symbols):
     y = [inv_dict_classes[i] for i in y_symbols]
     return y, dict_classes, inv_dict_classes
 
-
-if __name__ == '__main__':
-    train_file = 'corpus/sv/swedish_talbanken05_train.conll'
-    test_file = 'corpus/sv/swedish_talbanken05_test_blind.conll'
-    column_names_2006 = ['id', 'form', 'lemma', 'cpostag', 'postag', 'feats', 'head', 'deprel', 'phead', 'pdeprel']
-    column_names_2006_test = ['id', 'form', 'lemma', 'cpostag', 'postag', 'feats']
-
-    sentences = conll.read_sentences(train_file)
-    formatted_corpus = conll.split_rows(sentences, column_names_2006)
-
-    feature_names_short = [
-        'stack_0_word',
-        'stack_0_POS',
-        'queue_0_word',
-        'queue_0_POS',
-        'can-re',
-        'can-la'
-    ]
-
-    feature_names_middle = [
-        'stack_0_word',
-        'stack_0_POS',
-        'stack_1_word',
-        'stack_1_POS',
-        'queue_0_word',
-        'queue_0_POS',
-        'queue_1_word',
-        'queue_1_POS',
-        'can-re',
-        'can-la'
-    ]
-
-    feature_names_long = [
-        'stack_0_POS',
-        'stack_0_word',
-        'stack_1_word',
-        'stack_1_POS',
-        'queue_0_word',
-        'queue_0_POS',
-        'queue_1_word',
-        'queue_1_POS',
-        'after_stack_0_word',
-        'after_stack_0_POS',
-        'can-re',
-        'can-la',
-        'can-ra',
-        'head_of_stack_0_POS'
-    ]
-
+def extract_all_features(formatted_corpus):
     sent_cnt = 0
 
     y_symbols = [] # Our array of transistions
@@ -159,7 +153,7 @@ if __name__ == '__main__':
 
 
         while queue:
-            x = features.extract(stack, queue, graph, feature_names_long, sentence)
+            x = features.extract(stack, queue, graph, FEATURE_NAMES, sentence)
             X_dict.append(x)
 
             stack, queue, graph, trans = reference(stack, queue, graph)
@@ -174,14 +168,32 @@ if __name__ == '__main__':
             word['head'] = graph['heads'][word['id']]
         # print(y_symbols)
         # print(graph)
+    
+    return X_dict, y_symbols
 
 
-    """
-        Start SKlearn part
-    """
-    vec = DictVectorizer(sparse=True)
-    X = vec.fit_transform(X_dict)
-    y, dict_classes, inv_dict_classes = encode_classes(y_symbols)
+def execute_transition(stack, queue, graph, trans):
+    if stack and trans[:2] == 'ra':
+        stack, queue, graph = transition.right_arc(stack, queue, graph, trans[3:])
+        return stack, queue, graph, 'ra'
+    if stack and trans[:2] == 'la':
+        stack, queue, graph = transition.left_arc(stack, queue, graph, trans[3:])
+        return stack, queue, graph, 'la'
+    if stack and trans == 're':
+        stack, queue, graph = transition.reduce(stack, queue, graph)
+        return stack, queue, graph, 're'
+    stack, queue, graph = transition.shift(stack, queue, graph)
+    return stack, queue, graph, 'sh'
+
+
+if __name__ == '__main__':
+    train_file = 'corpus/sv/swedish_talbanken05_train.conll'
+    test_file = 'corpus/sv/swedish_talbanken05_test_blind.conll'
+    column_names_2006 = ['id', 'form', 'lemma', 'cpostag', 'postag', 'feats', 'head', 'deprel', 'phead', 'pdeprel']
+    column_names_2006_test = ['id', 'form', 'lemma', 'cpostag', 'postag', 'feats']
+
+    sentences = conll.read_sentences(train_file)
+    formatted_corpus = conll.split_rows(sentences, column_names_2006)
 
     LOGISTIC_MODEL = 'logistic-regression'
     PERCEPTRON_MODEL = 'perceptron'
@@ -190,7 +202,10 @@ if __name__ == '__main__':
     # Set the model type
     MODEL = LOGISTIC_MODEL
 
-    FILE_NAME = "{}.trained_model".format(MODEL)
+    MODEL_FILE_NAME = "{}.trained_model".format(MODEL)
+    DICT_VECTORIZER_FILE_NAME = 'dict-vectorizer.trained_model'
+    DICT_CLASSES_FILE_NAME = 'dict-classes.trained_model'
+    FEATURE_NAMES_FILE_NAME = 'feature-names.trained_model'
 
     if MODEL == LOGISTIC_MODEL:
         classifier = linear_model.LogisticRegression(penalty='l2', dual=True, solver='liblinear', verbose=1)
@@ -201,23 +216,91 @@ if __name__ == '__main__':
 
     try:
         # Model was found
+        model = pickle.load(open(MODEL_FILE_NAME, 'rb'))
+        vec = pickle.load(open(DICT_VECTORIZER_FILE_NAME, 'rb'))
+        dict_classes = pickle.load(open(DICT_CLASSES_FILE_NAME, 'rb'))
+        feature_names = pickle.load(open(FEATURE_NAMES_FILE_NAME, 'rb'))
+        if(feature_names != FEATURE_NAMES):
+            raise FileNotFoundError
+        
         print("The model was loaded from memory, skipping training phase")
-        model = pickle.load(open(FILE_NAME, 'rb'))
 
     except FileNotFoundError:
         # Model was not found. Must be trained
+        print("Could not find previously saved model")
         print("Training the model...")
+
+        X_dict, y_train_symbols = extract_all_features(formatted_corpus)
+
+        vec = DictVectorizer(sparse=True)
+        X = vec.fit_transform(X_dict)
+        y, dict_classes, inv_dict_classes = encode_classes(y_symbols)
+
         model = classifier.fit(X, y)
+        print(model)
 
         # Save the model
-        pickle.dump(model, open(FILE_NAME, 'wb'))
+        pickle.dump(model, open(MODEL_FILE_NAME, 'wb')) 
+        pickle.dump(vec, open(DICT_VECTORIZER_FILE_NAME, 'wb'))
+        pickle.dump(dict_classes, open(DICT_CLASSES_FILE_NAME, 'wb'))
+        pickle.dump(FEATURE_NAMES, open(FEATURE_NAMES_FILE_NAME, 'wb'))
 
-    print(model)
+    # Init test set
+    sentences = conll.read_sentences(test_file)
+    formatted_corpus = conll.split_rows(sentences, column_names_2006) 
 
-    y_train_predicted = model.predict(X)
+    sent_cnt = 0
 
-    # TODO: Test the model with test data
+    y_predicted_symbols = [] # Our array of transistions
 
-    print("Classification report for classifier %s:\n%s\n"
-          % (classifier, metrics.classification_report(y_symbols, list(map(lambda y_pred: dict_classes[y_pred], y_train_predicted)) )))
+    for sentence in formatted_corpus:
+        sent_cnt += 1
+        if sent_cnt % 1000 == 0:
+            a = 1
+            # print(sent_cnt, 'sentences on', len(formatted_corpus), flush=True)
+        stack = []
+        queue = list(sentence)
+        graph = {}
+        graph['heads'] = {}
+        graph['heads']['0'] = '0'
+        graph['deprels'] = {}
+        graph['deprels']['0'] = 'ROOT'
+
+
+        while queue:
+            x = features.extract(stack, queue, graph, FEATURE_NAMES, sentence)
+
+            X_test = vec.transform(x)
+
+            predicted_trans_index = model.predict(X_test)[0]
+            predicted_trans = dict_classes[predicted_trans_index]
+
+            # Build new graph 
+            stack, queue, graph, trans = execute_transition(stack, queue, graph, predicted_trans)
+
+            # Save the predicted trans 
+            y_predicted_symbols.append(trans)
+            
+        stack, graph = transition.empty_stack(stack, graph)
+
+        for word in sentence:
+            word_id = word['id']
+            try:
+                word['head'] = graph['heads'][word_id]
+                word['phead'] = graph['heads'][word_id]
+            except KeyError:
+                word['head'] = '_'
+                word['phead'] = '_'
+
+            try:
+                word['deprel'] = graph['deprels'][word_id]
+                word['pdeprel'] = graph['deprels'][word_id]
+            except KeyError:
+                word['deprel'] = '_'
+                word['pdeprel'] = '_'
+
+    conll.save('results.txt', formatted_corpus, column_names_2006)
+
+    # print("Classification report for classifier %s:\n%s\n" 
+        # % (classifier, metrics.classification_report(y_symbols, list(map(lambda y_pred: dict_classes[y_pred], y_predicted_symbols)) )))
 
