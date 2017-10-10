@@ -62,7 +62,7 @@ def extract(stack, queue, graph, feature_names, sentence):
             after_stack_0_word = next_word[WORD_TAG]
             after_stack_0_POS = next_word[POS_TAG]
     
-    # The root word of the sentence
+    # Head of stack 0 POS
     if stack:
         head_index_of_stack_0 = stack[0][HEAD_TAG]
         head_of_stack_0 = sentence[int(head_index_of_stack_0)]
@@ -116,12 +116,12 @@ def extract(stack, queue, graph, feature_names, sentence):
         features.append(transition.can_leftarc(stack, graph))
 
         # Our own features
-        features.append(transition.can_rightarc(stack, graph))
+        features.append(transition.can_rightarc(stack))
         features.append(head_of_stack_0_POS)
 
 
     # Convert features object
     features = dict(zip(feature_names, features))
 
-
+    
     return features

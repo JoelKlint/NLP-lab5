@@ -12,6 +12,7 @@ from sklearn import linear_model
 from sklearn import tree
 from sklearn import metrics
 from sklearn.feature_extraction import DictVectorizer
+import pickle
 
 def reference(stack, queue, graph):
     """
@@ -128,10 +129,12 @@ if __name__ == '__main__':
         'stack_1_POS',
         'queue_0_word',
         'queue_0_POS',
+        'queue_1_word',
+        'queue_1_POS',
         'after_stack_0_word',
         'after_stack_0_POS',
         'can-re',
-        'can-la'
+        'can-la',
         'can-ra',
         'head_of_stack_0_POS'
     ]
@@ -180,12 +183,35 @@ if __name__ == '__main__':
     X = vec.fit_transform(X_dict)
     y, dict_classes, inv_dict_classes = encode_classes(y_symbols)
 
-    print("Training the model...")
-    training_start_time = time.clock()
-    classifier = linear_model.LogisticRegression(penalty='l2', dual=True, solver='liblinear', verbose=1)
-    # classifier = linear_model.Perceptron(penalty='l2')
-    # classifier = tree.DecisionTreeClassifier()
-    model = classifier.fit(X, y)
+    LOGISTIC_MODEL = 'logistic-regression'
+    PERCEPTRON_MODEL = 'perceptron'
+    DECISION_MODEL = 'decision-tree-classifier'
+
+    # Set the model type
+    MODEL = LOGISTIC_MODEL
+
+    FILE_NAME = "{}.trained_model".format(MODEL)
+
+    if MODEL == LOGISTIC_MODEL:
+        classifier = linear_model.LogisticRegression(penalty='l2', dual=True, solver='liblinear', verbose=1)
+    elif MODEL == PERCEPTRON_MODEL:
+        classifier = linear_model.Perceptron(penalty='l2')
+    elif MODEL == DECISION_MODEL:
+        classifier = tree.DecisionTreeClassifier()
+
+    try:
+        # Model was found
+        print("The model was loaded from memory, skipping training phase")
+        model = pickle.load(open(FILE_NAME, 'rb'))
+
+    except FileNotFoundError:
+        # Model was not found. Must be trained
+        print("Training the model...")
+        model = classifier.fit(X, y)
+
+        # Save the model
+        pickle.dump(model, open(FILE_NAME, 'wb'))
+
     print(model)
 
     y_train_predicted = model.predict(X)
